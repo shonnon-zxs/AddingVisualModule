@@ -55,23 +55,27 @@ class Model(nn.Module):
         """
 
         w_emb = self.w_emb(q)
+        w_embt = w_emb[:, :1, :]
         q_emb = self.q_emb(w_emb)  # run GRU on word embeddings [batch, q_dim]
+        q_embt = self.q_emb(w_embt)  # run GRU on word embeddings [batch, q_dim]
+        q_pred = self.classifier(q_emb)
         q_repr = self.q_net(q_emb)
+        q_reprt = self.q_net(q_embt)
         batch_size = q.size(0)
 
-        logits_pos, att_gv_pos = self.compute_predict(q_repr, q_emb, gv_pos)
+        logits_pos, att_gv_pos = self.compute_predict(q_repr, q_emb, gv_pos, q_reprt, q_pred)
 
         if self_sup:
             # construct an irrelevant Q-I pair for each instance
             index = random.sample(range(0, batch_size), batch_size)
             gv_neg = gv_pos[index]
             logits_neg, att_gv_neg = \
-                self.compute_predict(q_repr, q_emb, gv_neg)
+                self.compute_predict(q_repr, q_emb, gv_neg, q_reprt, q_pred)
             return logits_pos, logits_neg, att_gv_pos, att_gv_neg
         else:
             return logits_pos, att_gv_pos
 
-    def compute_predict(self, q_repr, q_emb, v):
+    def compute_predict(self, q_repr, q_emb, v, q_reprt, q_pred):
 
         att_1 = self.gv_att_1(v, q_emb)  # [batch, 1, v_dim]
         att_2 = self.gv_att_2(v, q_emb)  # [batch, 1, v_dim]
@@ -82,9 +86,14 @@ class Model(nn.Module):
         gv_repr = self.gv_net(gv_emb)
 
         joint_repr = q_repr * gv_repr
+        joint_reprt = q_reprt * gv_repr
 
         joint_repr_normal = self.normal(joint_repr)
+        joint_repr_normalt = self.normal(joint_reprt)
+
         logits = self.classifier(joint_repr_normal)
+        logitst = self.classifier(joint_repr_normalt)
+        logits = (logits+logitst)*torch.sigmoid(q_pred)
 
         return logits, att_gv
 
