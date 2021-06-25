@@ -18,7 +18,7 @@ CUDA_VISIBLE_DEVICES=0 python main.py --dataset cpv2 --mode updn --topq 1 --topv
 
 ### 1.3 Result
 
-the result of CSS+V in VQA-CP v2 dataset:
+the result of CSS+V in VQA-CP v2 dataset:  
 |all | yn| other| number|  
 |59.48|88.40|46.31|52.25|
 The json file is in [here](https://pan.baidu.com/s/1IrR2We3YU7jOdo0Dil9vMA) with Extraction code：f5jb 
@@ -31,6 +31,6 @@ We only changed the base_model.py file
 CUDA_VISIBLE_DEVICES=0 python main.py --dataroot data/vqacp2/ --img_root data/coco/ --output saved_models_cp2/ --self_loss_weight 3 --ml_loss
 
 ### 2.3 Result
-the result of SSL+V in VQA-CP v2 dataset:
+the result of SSL+V in VQA-CP v2 dataset:  
 |all | yn| other| number|  
 |59.34	|88.19|	50.15|	37.74|
