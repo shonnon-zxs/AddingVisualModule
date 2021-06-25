@@ -5,7 +5,6 @@ from language_model import WordEmbedding, QuestionEmbedding
 from classifier import SimpleClassifier
 from fc import FCNet
 import numpy as np
-import random
 
 def mask_softmax(x,mask):
     mask=mask.unsqueeze(2).float()
@@ -19,14 +18,13 @@ def mask_softmax(x,mask):
 
 
 class BaseModel(nn.Module):
-    def __init__(self, w_emb, q_emb, v_att, q_net, v_net, normal, classifier):
+    def __init__(self, w_emb, q_emb, v_att, q_net, v_net, classifier):
         super(BaseModel, self).__init__()
         self.w_emb = w_emb
         self.q_emb = q_emb
         self.v_att = v_att
         self.q_net = q_net
         self.v_net = v_net
-        self.normal = normal
         self.classifier = classifier
         self.debias_loss_fn = None
 
@@ -44,49 +42,31 @@ class BaseModel(nn.Module):
         """
 
         w_emb = self.w_emb(q)
+        w_embt = w_emb[:, :1, :] # #------------------------------------
         q_emb = self.q_emb(w_emb)  # [batch, q_dim]
+        q_embt = self.q_emb(w_embt)
         att = self.v_att(v, q_emb)
-        batch_size = q.size(0)
         if v_mask is None:
             att = nn.functional.softmax(att, 1)
         else:
             att= mask_softmax(att,v_mask)
+
         v_emb = (att * v).sum(1)  # [batch, v_dim]
+
         q_repr = self.q_net(q_emb)
+        q_reprt = self.q_net(q_embt)
         v_repr = self.v_net(v_emb)
         joint_repr = q_repr * v_repr
+        joint_repr3 = q_reprt * v_repr
         logits = self.classifier(joint_repr)
-
-        # construct an irrelevant Q-I pair for each instance
-        index = random.sample(range(0, batch_size), batch_size)
-        gv_neg = v[index]
-        logits_neg, att_gv_neg, joint = \
-            self.compute_predict(q_repr, q_emb, gv_neg)
-        # return logits_pos, logits_neg, att_gv_pos, att_gv_neg, joint
+        logitst = self.classifier(joint_repr3)
 
         if labels is not None:
-            loss = self.debias_loss_fn(joint_repr, logits, bias, labels)
+            loss = self.debias_loss_fn(joint_repr, logits, logitst, bias, labels)
+
         else:
             loss = None
-
-        return logits, logits_neg, loss, w_emb
-
-    def compute_predict(self, q_repr, q_emb, v):
-
-        att_1 = self.v_att(v, q_emb)  # [batch, 1, v_dim]
-        att_2 = self.v_att(v, q_emb)  # [batch, 1, v_dim]
-        att_gv = att_1 + att_2
-
-        gv_embs = (att_gv * v)  # [batch, v_dim]
-        gv_emb = gv_embs.sum(1)
-        gv_repr = self.v_net(gv_emb)
-
-        joint_repr = q_repr * gv_repr
-
-        joint_repr_normal = self.normal(joint_repr)
-        logits = self.classifier(joint_repr_normal)
-
-        return logits, att_gv, joint_repr_normal
+        return logits, loss,w_emb
 
 def build_baseline0(dataset, num_hid):
     w_emb = WordEmbedding(dataset.dictionary.ntoken, 300, 0.0)
@@ -105,7 +85,6 @@ def build_baseline0_newatt(dataset, num_hid):
     v_att = NewAttention(dataset.v_dim, q_emb.num_hid, num_hid)
     q_net = FCNet([q_emb.num_hid, num_hid])
     v_net = FCNet([dataset.v_dim, num_hid])
-    normal = nn.BatchNorm1d(num_hid, affine=False)
     classifier = SimpleClassifier(
         num_hid, num_hid * 2, dataset.num_ans_candidates, 0.5)
-    return BaseModel(w_emb, q_emb, v_att, q_net, v_net, normal, classifier)
+    return BaseModel(w_emb, q_emb, v_att, q_net, v_net, classifier)
