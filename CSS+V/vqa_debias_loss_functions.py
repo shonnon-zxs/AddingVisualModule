@@ -28,7 +28,7 @@ def renormalize_binary_logits(a, b):
 class DebiasLossFn(nn.Module):
     """General API for our loss functions"""
 
-    def forward(self, hidden, logits, bias, labels):
+    def forward(self, hidden, logits, logitst, bias, labels):
         """
         :param hidden: [batch, n_hidden] hidden features from the last layer in the model
         :param logits: [batch, n_answers_options] sigmoid logits for each answer option
@@ -153,7 +153,7 @@ class LearnedMixin(DebiasLossFn):
         else:
             self.smooth_param = None
 
-    def forward(self, hidden, logits, bias, labels):
+    def forward(self, hidden, logits, logitst, bias, labels):
         factor = self.bias_lin.forward(hidden)  # [batch, 1]
         factor = F.softplus(factor)
 
@@ -172,10 +172,12 @@ class LearnedMixin(DebiasLossFn):
         bias = bias * factor.unsqueeze(1)
 
         log_prob, log_one_minus_prob = convert_sigmoid_logits_to_binary_logprobs(logits)
+        log_probt, log_one_minus_probt = convert_sigmoid_logits_to_binary_logprobs(logitst)
         log_probs = torch.stack([log_prob, log_one_minus_prob], 2)
+        log_probst = torch.stack([log_probt, log_one_minus_probt], 2)
 
         # Add the bias in
-        logits = bias + log_probs
+        logits = 0.7*bias + 1.3*log_probs + log_probst
 
         # Renormalize to get log probabilities
         log_prob, log_one_minus_prob = renormalize_binary_logits(logits[:, :, 0], logits[:, :, 1])
