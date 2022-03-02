@@ -21,7 +21,55 @@ updn+V
 ```python
 CUDA_VISIBLE_DEVICES=0 python main.py --dataset cpv2 --mode updn --topq 1 --topv -1 --qvp 5 --output [] --seed 0
 ```
-### 1.3 Result
+
+### other loss
+
+```python
+lcloss
+        
+        # Add the bias in
+        logits = 0.7*bias + 1.3*log_probs + 3*log_probsv
+
+        # Renormalize to get log probabilities
+        log_prob, log_one_minus_prob = renormalize_binary_logits(logits[:, :, 0], logits[:, :, 1])
+
+        sap = torch.cosine_similarity(log_prob, labels, dim=1)
+        san = torch.cosine_similarity(bias[:, :, 0], labels, dim=1)
+
+        # Compute loss
+        loss_lc = sap / elementwise_logsumexp(sap, san)
+        loss = -(log_prob * labels + (1 - labels) * log_one_minus_prob).sum(1).mean(0) + loss_lc.mean(0)
+
+ladv
+
+        # Add the bias in
+        logits = bias + log_probs
+
+        # Renormalize to get log probabilities
+        log_prob, log_one_minus_prob = renormalize_binary_logits(logits[:, :, 0], logits[:, :, 1])
+
+        b = F.softplus(bias[:, :, 0])
+        p = F.softplus(log_prob)
+        entropy_p = -(torch.exp(p) * p).sum(1).mean(0)
+        entropy_b = -(torch.exp(b) * b).sum(1).mean(0)
+        loss_entropy = entropy_p - entropy_b
+        # Compute loss
+        loss = -(log_prob * labels + (1 - labels) * log_one_minus_prob).sum(1).mean(0) + 0.05*loss_entropy
+
+lccos
+
+        # Add the bias in
+        logits = bias + log_probs
+
+        # Renormalize to get log probabilities
+        log_prob, log_one_minus_prob = renormalize_binary_logits(logits[:, :, 0], logits[:, :, 1])
+
+        # Compute loss
+        loss_cos = 1 - torch.cosine_similarity(log_prob, labels, dim=1)
+        loss = -(log_prob * labels + (1 - labels) * log_one_minus_prob).sum(1).mean(0) + 3*loss_cos.mean(0)
+```
+
+### 1.4 Result
 
 the result of CSS+V in VQA-CP v2 dataset:  
 | all | yn  |other|number|  
