@@ -1,7 +1,14 @@
 # AddingVisualModule
-Here is the implementation of our paper Overcoming Language Priors in VQA via Added Visual Module.
+
+Here is the implementation of our paper **[Overcoming Language Priors in VQA via Added Visual Module](https://link.springer.com/article/10.1007/s00521-022-06923-0)**. (Accepted by Neural Computing and Applications)
+
+> Visual Question Answering (VQA) is a new and popular research direction. Dealing with language prior problems has become a hot topic in VQA in the past two years. With the development of technologies relating to VQA, related scholars have realized that in VQA tasks, the generation of answers relies too much on language priors and considers less with visual content. Some of the previous methods to alleviate language priors only focus on processing the question, while the methods to increase visual acuity only concentrate on finding the correct region. To better overcome the language prior problem of VQA, we propose a method that will improve visual content further to enhance the impact of visual content on answers. Our method consists of three parts: the base model branch, the question-only model branch, and the visual model branch. Many experiments have been carried out on the three datasets VQA-CP v1, VQA-CP v2, and VQA v2, which proves the effectiveness of our method and further improves the accuracy of the different models.
+![image](https://github.com/user-attachments/assets/24988288-988f-4bf2-aac3-6ebc5328be42)
+
+____________
 This repository contains code modified from [CSS](https://github.com/yanxinzju/CSS-VQA) and [SSL](https://github.com/CrossmodalGroup/SSL-VQA), many thanks!
-Most of the code content is based on the above two links, the specific changes are as follows:
+
+Most of the code content is based on the above two links, the specific changes (**key codes**) are as follows:
 ## 1. CSS+V
 
 ### 1.1 File description
@@ -89,3 +96,22 @@ CUDA_VISIBLE_DEVICES=0 python main.py --dataroot data/vqacp2/ --img_root data/co
 the result of SSL+V in VQA-CP v2 dataset:  
 | all |   yn | other | number|  
 |59.34| 88.19| 50.15 | 37.74 |
+
+## 3 Citation
+
+```bibtex
+@article{zhao2022overcoming,
+  title={Overcoming language priors in VQA via adding visual module},
+  author={Zhao, Jia and Zhang, Xuesong and Wang, Xuefeng and Yang, Ying and Sun, Gang},
+  journal={Neural Computing and Applications},
+  volume={34},
+  number={11},
+  pages={9015--9023},
+  year={2022},
+  publisher={Springer}
+}
+  ```
+
+## Acknowledgments
+Our code can build upon [CSS-CVPR2020](https://openaccess.thecvf.com/content_CVPR_2020/html/Chen_Counterfactual_Samples_Synthesizing_for_Robust_Visual_Question_Answering_CVPR_2020_paper.html) and [SSL]([https://github.com/cshizhe/VLN-HAMT/tree/main/preprocess](https://dl.acm.org/doi/abs/10.5555/3491440.3491591)). Thanks for their great works!
+
